@@ -1,57 +1,52 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ====== JSON DB ======
-const DB_PATH = path.join(__dirname, "data.json");
+// ===== MongoDB connect =====
+const MONGODB_URI = process.env.MONGODB_URI; // set trên Render
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connect error:", err.message));
 
-// ====== API ======
+// ===== Model =====
+const TodoSchema = new mongoose.Schema(
+  { text: { type: String, required: true } },
+  { timestamps: true }
+);
+const Todo = mongoose.model("Todo", TodoSchema);
+
+// ===== Routes =====
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Backend is running!" });
 });
 
-app.get("/api/hello", (req, res) => {
-  res.json({ msg: "Hello from Render backend 🚀" });
+app.get("/api/todos", async (req, res) => {
+  const todos = await Todo.find().sort({ createdAt: -1 });
+  res.json(todos);
 });
 
-app.get("/api/db", (req, res) => {
-  try {
-    const raw = fs.readFileSync(DB_PATH, "utf-8");
-    res.json(JSON.parse(raw));
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.post("/api/todos", async (req, res) => {
+  const text = (req.body?.text || "").trim();
+  if (!text) return res.status(400).json({ error: "text is required" });
+
+  const created = await Todo.create({ text });
+  res.json(created);
 });
 
-// ====== Serve Frontend dist (nếu bạn build dist và đưa lên repo) ======
-const FRONTEND_DIST = path.join(__dirname, "..", "frontend", "dist");
-const INDEX_HTML = path.join(FRONTEND_DIST, "index.html");
+app.delete("/api/todos/:id", async (req, res) => {
+  await Todo.findByIdAndDelete(req.params.id);
+  res.json({ ok: true });
+});
 
-if (fs.existsSync(INDEX_HTML)) {
-  app.use(express.static(FRONTEND_DIST));
-
-  // IMPORTANT: dùng REGEX, tránh "/*"
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(INDEX_HTML);
-  });
-} else {
-  // nếu không có dist thì root trả trang hướng dẫn
-  app.get("/", (req, res) => {
-    res.send(`
-      <h2>Backend is running 🚀</h2>
-      <ul>
-        <li><a href="/api/health">/api/health</a></li>
-        <li><a href="/api/hello">/api/hello</a></li>
-        <li><a href="/api/db">/api/db</a></li>
-      </ul>
-    `);
-  });
-}
+// Root route cho Render
+app.get("/", (req, res) => {
+  res.send("Backend is running ✅");
+});
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Server running on port", PORT));
