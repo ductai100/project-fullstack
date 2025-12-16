@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Fullstack - Render</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 24px; max-width: 800px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; }
+    .row { display: flex; gap: 10px; align-items: center; }
+    input { flex: 1; padding: 10px; font-size: 16px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    ul { margin-top: 16px; padding-left: 18px; }
+    li { margin: 8px 0; display: flex; justify-content: space-between; gap: 12px; }
+    small { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Nhập nội dung + Add (lưu lại)</h1>
+  <p><small>Mở lại trang vẫn còn vì lưu vào <code>backend/data.json</code>.</small></p>
+
+  <div class="row">
+    <input id="txt" placeholder="Nhập gì đó..." />
+    <button id="btn">Add</button>
+  </div>
+
+  <ul id="list"></ul>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const txt = $("txt");
+    const btn = $("btn");
+    const list = $("list");
+
+    function render(items) {
+      list.innerHTML = "";
+      for (const it of items) {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span>${escapeHtml(it.text)}</span>
+          <button data-id="${it.id}">Xóa</button>
+        `;
+        list.appendChild(li);
+      }
+
+      // delete handlers
+      list.querySelectorAll("button[data-id]").forEach(b => {
+        b.addEventListener("click", async () => {
+          const id = b.getAttribute("data-id");
+          await fetch(`/api/items/${id}`, { method: "DELETE" });
+          await load();
+        });
+      });
+    }
+
+    async function load() {
+      const res = await fetch("/api/items");
+      const items = await res.json();
+      render(items);
+    }
+
+    btn.addEventListener("click", async () => {
+      const value = txt.value.trim();
+      if (!value) return alert("Bạn chưa nhập gì");
+
+      btn.disabled = true;
+      btn.textContent = "Adding...";
+      try {
+        const res = await fetch("/api/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: value }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Add failed");
+        }
+        txt.value = "";
+        await load();
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Add";
+      }
+    });
+
+    txt.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") btn.click();
+    });
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    load();
+  </script>
+</body>
+</html>
