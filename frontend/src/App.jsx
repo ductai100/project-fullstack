@@ -51,10 +51,7 @@ export default function App() {
     <div style={{ padding: 40, maxWidth: 700, margin: "0 auto", fontFamily: "system-ui" }}>
       <h1>Project Fullstack (Render 1 link)</h1>
 
-      <h3>Thông tin sinh viên</h3>
-      <p><b>Họ tên:</b> Nguyễn Đức Tài</p>
-      <p><b>MSSV:</b> DH52201386</p>
-      <p><b>Lớp:</b> D22_TH09</p>
+  
 
       <hr />
 
