@@ -1,17 +1,14 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Backend Express + MongoDB for Fullstack Project",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "mongodb": "^6.5.0",
-    "mongoose": "^9.0.1"
+    "express": "^5.2.1",
+    "mongoose": "^8.0.0"
   }
 }
